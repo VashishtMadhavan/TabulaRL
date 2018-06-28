@@ -72,7 +72,7 @@ class TabularMDP(Environment):
         self.P = {}
         for state in range(nState):
             for action in range(nAction):
-                self.R[state, action] = (1, 1)
+                self.R[state, action] = (1,  1)
                 self.P[state, action] = np.ones(nState) / nState
 
 
@@ -143,9 +143,24 @@ class TabularMDP(Environment):
         return qVals, qMax
 
 
+class RandomMDP(TabularMDP):
+    def __init__(self, nState, nAction, epLen):
+        super(RandomMDP, self).__init__(nState, nAction, epLen)
+        for state in range(nState):
+            for action in range(nAction):
+                mean_rew = np.random.normal(1., 1.)
+                self.R[state, action] = (mean_rew, 1)
+                self.P[state, action] = np.random.dirichlet(np.ones(nState))
+
+
 #-------------------------------------------------------------------------------
 # Benchmark environments
 
+
+def make_randomMDP(nState=10, nAction=5, epLen=10):
+    mdp = RandomMDP(nState, nAction, epLen)
+    mdp.reset()
+    return mdp
 
 def make_riverSwim(epLen=20, nState=6):
     '''
@@ -301,7 +316,6 @@ def make_bootDQNChain(nState=6, epLen=15, nAction=2):
     bootDQNChain.reset()
 
     return bootDQNChain
-
 
 def make_hardBanditMDP(epLen, gap=0.01, nAction=2, pSuccess=0.5):
     '''

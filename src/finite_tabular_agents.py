@@ -17,7 +17,7 @@ author: iosband@stanford.edu
 '''
 
 import numpy as np
-from agent import *
+from src.agent import *
 
 class FiniteHorizonTabularAgent(FiniteHorizonAgent):
     '''
@@ -65,8 +65,8 @@ class FiniteHorizonTabularAgent(FiniteHorizonAgent):
         self.R_prior = {}
         self.P_prior = {}
 
-        for state in xrange(nState):
-            for action in xrange(nAction):
+        for state in range(nState):
+            for action in range(nAction):
                 self.R_prior[state, action] = (self.mu0, self.tau0)
                 self.P_prior[state, action] = (
                     self.alpha0 * np.ones(self.nState, dtype=np.float32))
@@ -136,8 +136,8 @@ class FiniteHorizonTabularAgent(FiniteHorizonAgent):
         '''
         R_samp = {}
         P_samp = {}
-        for s in xrange(self.nState):
-            for a in xrange(self.nAction):
+        for s in range(self.nState):
+            for a in range(self.nAction):
                 mu, tau = self.R_prior[s, a]
                 R_samp[s, a] = mu + np.random.normal() * 1./np.sqrt(tau)
                 P_samp[s, a] = np.random.dirichlet(self.P_prior[s, a])
@@ -157,8 +157,8 @@ class FiniteHorizonTabularAgent(FiniteHorizonAgent):
         '''
         R_hat = {}
         P_hat = {}
-        for s in xrange(self.nState):
-            for a in xrange(self.nAction):
+        for s in range(self.nState):
+            for a in range(self.nAction):
                 R_hat[s, a] = self.R_prior[s, a][0]
                 P_hat[s, a] = self.P_prior[s, a] / np.sum(self.P_prior[s, a])
 
@@ -359,15 +359,15 @@ class OptimisticPSRL(PSRL):
         self.qVals = qVals
         self.qMax = qMax
 
-        for i in xrange(1, self.nSamp):
+        for i in range(1, self.nSamp):
             # Do another sample and take optimistic Q-values
             R_samp, P_samp = self.sample_mdp()
             qVals, qMax = self.compute_qVals(R_samp, P_samp)
 
-            for timestep in xrange(self.epLen):
+            for timestep in range(self.epLen):
                 self.qMax[timestep] = np.maximum(qMax[timestep],
                                                  self.qMax[timestep])
-                for state in xrange(self.nState):
+                for state in range(self.nState):
                     self.qVals[state, timestep] = np.maximum(qVals[state, timestep],
                                                              self.qVals[state, timestep])
 
@@ -509,8 +509,8 @@ class BOLT(FiniteHorizonTabularAgent):
         R_slack = {}
         P_slack = {}
 
-        for s in xrange(self.nState):
-            for a in xrange(self.nAction):
+        for s in range(self.nState):
+            for a in range(self.nAction):
                 R_slack[s, a] = self.eta / (self.R_prior[s, a][1] + self.eta)
                 P_slack[s, a] = 2 * self.eta / (self.P_prior[s, a].sum() + self.eta)
         return R_slack, P_slack
@@ -568,8 +568,8 @@ class UCRL2(FiniteHorizonTabularAgent):
         P_slack = {}
         delta = self.delta
         scaling = self.scaling
-        for s in xrange(self.nState):
-            for a in xrange(self.nAction):
+        for s in range(self.nState):
+            for a in range(self.nAction):
                 nObsR = max(self.R_prior[s, a][1] - self.tau0, 1.)
                 R_slack[s, a] = scaling * np.sqrt((4 * np.log(2 * self.nState * self.nAction * (time + 1) / delta)) / float(nObsR))
 
@@ -679,8 +679,8 @@ class UCFH(UCRL2):
         delta = self.delta
         delta1 = self.delta1
         scaling = self.scaling
-        for s in xrange(self.nState):
-            for a in xrange(self.nAction):
+        for s in range(self.nState):
+            for a in range(self.nAction):
                 nObsR = max(self.R_prior[s, a][1] - self.tau0, 1.)
                 R_slack[s, a] = scaling * np.sqrt((4 * np.log(2 * self.nState * self.nAction * (time + 1) / delta)) / nObsR)
 
@@ -708,7 +708,7 @@ class UCFH(UCRL2):
                     pSlack = 1 - pOpt.sum()
 
                     if pSlack < 0:
-                        print 'ERROR we have a problem'
+                        print('ERROR we have a problem')
 
                     for sPrime in range(self.nState):
                         # Reverse the ordering
@@ -727,6 +727,12 @@ class UCFH(UCRL2):
 #-----------------------------------------------------------------------------
 # Epsilon-Greedy
 #-----------------------------------------------------------------------------
+
+class Random(FiniteHorizonTabularAgent):
+    def pick_action(self, state, timestep):
+        action = np.random.choice(self.nAction)
+        return action
+
 
 class EpsilonGreedy(FiniteHorizonTabularAgent):
     '''Epsilon greedy agent'''

@@ -35,7 +35,7 @@ def run_finite_tabular_experiment(agent, env, f_ext, nEps, seed=1,
     cumReward = 0
     empRegret = 0
 
-    for ep in xrange(1, nEps + 2):
+    for ep in range(1, nEps + 2):
         # Reset the environment
         env.reset()
         epMaxVal = qMax[env.timestep][env.state]
@@ -73,19 +73,57 @@ def run_finite_tabular_experiment(agent, env, f_ext, nEps, seed=1,
         # Logging to dataframe
         if ep % recFreq == 0:
             data.append([ep, epReward, cumReward, cumRegret, empRegret])
-            print 'episode:', ep, 'epReward:', epReward, 'cumRegret:', cumRegret
+            print('episode:', ep, 'epReward:', epReward, 'cumRegret:', cumRegret)
 
         if ep % max(fileFreq, recFreq) == 0:
             dt = pd.DataFrame(data,
                               columns=['episode', 'epReward', 'cumReward',
                                        'cumRegret', 'empRegret'])
-            print 'Writing to file ' + targetPath
+            print('Writing to file ' + targetPath)
             dt.to_csv('tmp.csv', index=False, float_format='%.2f')
             copyfile('tmp.csv', targetPath)
-            print '****************************'
+            print('****************************')
 
-    print '**************************************************'
-    print 'Experiment complete'
-    print '**************************************************'
+    print('**************************************************')
+    print('Experiment complete')
+    print('**************************************************')
 
+
+
+def run_finite_tabular_experiment_lite(agent, env, f_ext, nEps, seed=1):
+    data = []
+    qVals, qMax = env.compute_qVals()
+    np.random.seed(seed)
+
+    cumRegret = 0
+    cumReward = 0
+    empRegret = 0
+
+    for ep in range(nEps):
+        # Reset the environment
+        env.reset()
+        epMaxVal = qMax[env.timestep][env.state]
+
+        agent.update_policy(ep)
+
+        epReward = 0
+        epRegret = 0
+        pContinue = 1
+
+        while pContinue > 0:
+            # Step through the episode
+            h, oldState = f_ext.get_feat(env)
+
+            action = agent.pick_action(oldState, h)
+            epRegret += qVals[oldState, h].max() - qVals[oldState, h][action]
+
+            reward, newState, pContinue = env.advance(action)
+            epReward += reward
+
+            agent.update_obs(oldState, action, reward, newState, pContinue, h)
+
+        cumReward += epReward
+        cumRegret += epRegret
+        empRegret += (epMaxVal - epReward)
+    return cumReward
 
